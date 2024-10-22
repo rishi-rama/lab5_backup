@@ -55,36 +55,41 @@ describe('Budget Tracker Application', () => {
 
   test('can edit budget value', async () => {
     // First click edit
-    const editButton = screen.getByRole('button', { name: 'Edit budget' });
+    const editButton = screen.getByRole('button', { name: /edit/i });
     fireEvent.click(editButton);
     
-    // Get budget input using data-testid
-    const budgetInput = screen.getByTestId('budget-input');
+    // Now find the input - we know it's in a div with Budget in it
+    const budgetDiv = screen.getByText('Budget:').parentElement;
+    const budgetInput = budgetDiv.querySelector('input');
+    if (!budgetInput) throw new Error('Budget input not found');
     
     await userEvent.clear(budgetInput);
     await userEvent.type(budgetInput, '2000');
     
-    const saveBudgetButton = screen.getByRole('button', { name: 'Save budget' });
+    const saveBudgetButton = screen.getByRole('button', { name: /save/i });
     fireEvent.click(saveBudgetButton);
 
-    const budgetDisplay = screen.getByTestId('budget-display');
-    expect(budgetDisplay).toHaveTextContent('Budget: $2000');
+    expect(screen.getByText(/Budget: \$2000/i)).toBeInTheDocument();
     expect(screen.getByText(/Remaining: \$2000/i)).toBeInTheDocument();
   });
 
   test('verifies budget equation (Budget = Remaining + Total Expenditure)', async () => {
-    // Edit budget to 2000
-    const editButton = screen.getByRole('button', { name: 'Edit budget' });
+    // First click edit
+    const editButton = screen.getByRole('button', { name: /edit/i });
     fireEvent.click(editButton);
     
-    const budgetInput = screen.getByTestId('budget-input');
+    // Find budget input same way as above
+    const budgetDiv = screen.getByText('Budget:').parentElement;
+    const budgetInput = budgetDiv.querySelector('input');
+    if (!budgetInput) throw new Error('Budget input not found');
+    
     await userEvent.clear(budgetInput);
     await userEvent.type(budgetInput, '2000');
     
-    const saveBudgetButton = screen.getByRole('button', { name: 'Save budget' });
+    const saveBudgetButton = screen.getByRole('button', { name: /save/i });
     fireEvent.click(saveBudgetButton);
 
-    // Add expenses
+    // Add multiple expenses
     const nameInput = screen.getByLabelText(/name/i);
     const costInput = screen.getByLabelText(/cost/i);
     const submitButton = screen.getByRole('button', { name: /save/i, type: 'submit' });
@@ -103,7 +108,7 @@ describe('Budget Tracker Application', () => {
     await userEvent.type(costInput, '700');
     fireEvent.click(submitButton);
 
-    expect(screen.getByTestId('budget-display')).toHaveTextContent('Budget: $2000');
+    expect(screen.getByText(/Budget: \$2000/i)).toBeInTheDocument();
     expect(screen.getByText(/Remaining: \$800/i)).toBeInTheDocument();
     expect(screen.getByText(/Spent so far: \$1200/i)).toBeInTheDocument();
   });
