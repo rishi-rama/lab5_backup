@@ -25,7 +25,7 @@ describe('Budget Tracker Application', () => {
   test('can delete an expense and updates totals correctly', async () => {
     const nameInput = screen.getByLabelText(/name/i);
     const costInput = screen.getByLabelText(/cost/i);
-    const submitButton = screen.getByRole('button', { name: /save$/i });
+    const submitButton = screen.getByRole('button', { name: /save/i });
 
     await userEvent.type(nameInput, 'Test Expense');
     await userEvent.type(costInput, '300');
@@ -42,7 +42,7 @@ describe('Budget Tracker Application', () => {
   test('shows alert when remaining balance falls below zero', async () => {
     const nameInput = screen.getByLabelText(/name/i);
     const costInput = screen.getByLabelText(/cost/i);
-    const submitButton = screen.getByRole('button', { name: /save$/i });
+    const submitButton = screen.getByRole('button', { name: /save/i });
 
     await userEvent.type(nameInput, 'Large Expense');
     await userEvent.type(costInput, '1200');
@@ -54,7 +54,7 @@ describe('Budget Tracker Application', () => {
   });
 
   test('can edit budget value', async () => {
-    const editButton = screen.getByRole('button', { name: /edit budget/i });
+    const editButton = screen.getByRole('button', { name: /edit/i });
     fireEvent.click(editButton);
     
     const budgetInput = screen.getByTestId('budget-input');
@@ -62,7 +62,7 @@ describe('Budget Tracker Application', () => {
     await userEvent.clear(budgetInput);
     await userEvent.type(budgetInput, '2000');
     
-    const saveBudgetButton = screen.getByRole('button', { name: /save budget/i });
+    const saveBudgetButton = screen.getByRole('button', { name: /save/i });
     fireEvent.click(saveBudgetButton);
 
     const budgetDisplay = screen.getByTestId('budget-display');
@@ -71,19 +71,19 @@ describe('Budget Tracker Application', () => {
   });
 
   test('verifies budget equation (Budget = Remaining + Total Expenditure)', async () => {
-    const editButton = screen.getByRole('button', { name: /edit budget/i });
+    const editButton = screen.getByRole('button', { name: /edit/i });
     fireEvent.click(editButton);
     
     const budgetInput = screen.getByTestId('budget-input');
     await userEvent.clear(budgetInput);
     await userEvent.type(budgetInput, '2000');
     
-    const saveBudgetButton = screen.getByRole('button', { name: /save budget/i });
+    const saveBudgetButton = screen.getByRole('button', { name: /save/i });
     fireEvent.click(saveBudgetButton);
 
     const nameInput = screen.getByLabelText(/name/i);
     const costInput = screen.getByLabelText(/cost/i);
-    const submitButton = screen.getByRole('button', { name: /save$/i });
+    const submitButton = screen.getByRole('button', { name: /save/i });
 
     // Add first expense
     await userEvent.clear(nameInput);
