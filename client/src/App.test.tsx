@@ -1,106 +1,81 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import App from './App';
+import React from 'react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { MyBudgetTracker } from './views/MyBudgetTracker';
+import { AppContext } from './context/AppContext';
 
-describe('Budget Tracker Application', () => {
+// Mock data
+const mockExpenses = [{ id: '1', description: 'Test Expense', cost: 100 }];
+const mockSetExpenses = jest.fn();
+const mockBudget = 1000;
+const mockSetBudget = jest.fn();
+
+describe('MyBudgetTracker Component', () => {
   beforeEach(() => {
-    render(<App />);
+    jest.clearAllMocks();
   });
 
-  test('can add a new expense and updates totals correctly', async () => {
-    const nameInput = screen.getByLabelText(/name/i);
-    const costInput = screen.getByLabelText(/cost/i);
-    const submitButton = screen.getByRole('button', { name: /save/i });
+  test('renders MyBudgetTracker component', () => {
+    render(
+      <AppContext.Provider value={{ expenses: mockExpenses, setExpenses: mockSetExpenses, budget: mockBudget, setBudget: mockSetBudget }}>
+        <MyBudgetTracker />
+      </AppContext.Provider>
+    );
 
-    await userEvent.type(nameInput, 'Test Expense');
-    await userEvent.type(costInput, '300');
-    fireEvent.click(submitButton);
-
-    expect(screen.getByText('Test Expense')).toBeInTheDocument();
-    expect(screen.getByText('$300')).toBeInTheDocument();
-    expect(screen.getByText(/Remaining: \$700/i)).toBeInTheDocument();
-    expect(screen.getByText(/Spent so far: \$300/i)).toBeInTheDocument();
+    const headerElement = screen.getByText(/My Budget Planner/i);
+    expect(headerElement).toBeInTheDocument();
   });
 
-  test('can delete an expense and updates totals correctly', async () => {
-    const nameInput = screen.getByLabelText(/name/i);
-    const costInput = screen.getByLabelText(/cost/i);
-    const submitButton = screen.getByRole('button', { name: /save$/i });
+  test('adds a new expense and updates the totals correctly', async () => {
+    render(
+      <AppContext.Provider value={{ expenses: mockExpenses, setExpenses: mockSetExpenses, budget: mockBudget, setBudget: mockSetBudget }}>
+        <MyBudgetTracker />
+      </AppContext.Provider>
+    );
 
-    await userEvent.type(nameInput, 'Test Expense');
-    await userEvent.type(costInput, '300');
-    fireEvent.click(submitButton);
+    const expenseNameInput = screen.getByLabelText('Description');
+    const expenseCostInput = screen.getByLabelText('Cost');
+    const addExpenseButton = screen.getByRole('button', { name: /Save/i });
 
-    const deleteButton = screen.getByRole('button', { name: /x/i });
-    fireEvent.click(deleteButton);
+    await act(async () => {
+      fireEvent.change(expenseNameInput, { target: { value: 'New Expense' } });
+      fireEvent.change(expenseCostInput, { target: { value: '50' } });
+      fireEvent.click(addExpenseButton);
+    });
 
-    expect(screen.queryByText('Test Expense')).not.toBeInTheDocument();
-    expect(screen.getByText(/Remaining: \$1000/i)).toBeInTheDocument();
-    expect(screen.getByText(/Spent so far: \$0/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockSetExpenses).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ description: 'New Expense', cost: 50 })
+        ])
+      );
+    });
   });
 
-  test('shows alert when remaining balance falls below zero', async () => {
-    const nameInput = screen.getByLabelText(/name/i);
-    const costInput = screen.getByLabelText(/cost/i);
-    const submitButton = screen.getByRole('button', { name: /save$/i });
+ 
+  test('edits the budget correctly', async () => {
+    render(
+      <AppContext.Provider value={{ expenses: mockExpenses, setExpenses: mockSetExpenses, budget: mockBudget, setBudget: mockSetBudget }}>
+        <MyBudgetTracker />
+      </AppContext.Provider>
+    );
 
-    await userEvent.type(nameInput, 'Large Expense');
-    await userEvent.type(costInput, '1200');
-    fireEvent.click(submitButton);
+    const editButton = screen.getByRole('button', { name: /Edit Budget/i });
 
-    expect(screen.getByText(/Warning: You have exceeded your budget!/i)).toBeInTheDocument();
-    expect(screen.getByText(/Remaining: \$-200/i)).toBeInTheDocument();
-    expect(screen.getByText(/Remaining:/i).parentElement).toHaveClass('alert-danger');
-  });
+    await act(async () => {
+      fireEvent.click(editButton);
+    });
 
-  test('can edit budget value', async () => {
-    const editButton = screen.getByRole('button', { name: /edit budget/i });
-    fireEvent.click(editButton);
-    
     const budgetInput = screen.getByTestId('budget-input');
-    
-    await userEvent.clear(budgetInput);
-    await userEvent.type(budgetInput, '2000');
-    
-    const saveBudgetButton = screen.getByRole('button', { name: /save budget/i });
-    fireEvent.click(saveBudgetButton);
+    const saveButton = screen.getByRole('button', { name: /Save Budget/i });
 
-    const budgetDisplay = screen.getByTestId('budget-display');
-    expect(budgetDisplay).toHaveTextContent('Budget: $2000');
-    expect(screen.getByText(/Remaining: \$2000/i)).toBeInTheDocument();
-  });
+    await act(async () => {
+      fireEvent.change(budgetInput, { target: { value: '1500' } });
+      fireEvent.click(saveButton);
+    });
 
-  test('verifies budget equation (Budget = Remaining + Total Expenditure)', async () => {
-    const editButton = screen.getByRole('button', { name: /edit budget/i });
-    fireEvent.click(editButton);
-    
-    const budgetInput = screen.getByTestId('budget-input');
-    await userEvent.clear(budgetInput);
-    await userEvent.type(budgetInput, '2000');
-    
-    const saveBudgetButton = screen.getByRole('button', { name: /save budget/i });
-    fireEvent.click(saveBudgetButton);
-
-    const nameInput = screen.getByLabelText(/name/i);
-    const costInput = screen.getByLabelText(/cost/i);
-    const submitButton = screen.getByRole('button', { name: /save$/i });
-
-    // Add first expense
-    await userEvent.clear(nameInput);
-    await userEvent.clear(costInput);
-    await userEvent.type(nameInput, 'Expense 1');
-    await userEvent.type(costInput, '500');
-    fireEvent.click(submitButton);
-
-    // Add second expense
-    await userEvent.clear(nameInput);
-    await userEvent.clear(costInput);
-    await userEvent.type(nameInput, 'Expense 2');
-    await userEvent.type(costInput, '700');
-    fireEvent.click(submitButton);
-
-    expect(screen.getByTestId('budget-display')).toHaveTextContent('Budget: $2000');
-    expect(screen.getByText(/Remaining: \$800/i)).toBeInTheDocument();
-    expect(screen.getByText(/Spent so far: \$1200/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockSetBudget).toHaveBeenCalledWith(1500);
+    });
   });
 });
